@@ -1,0 +1,17 @@
+conda create -n yolov8_custom python=3.9
+conda activate yolov8_custom
+pip install simple_image_download==0.4
+python download_images.py
+pip install labelImg
+pip install ultralytics 
+//run 
+//python 
+//import torch
+//torch.__version__
+torch.cuda.is_available()
+yolo11m.pt
+
+#to train 
+yolo task=detect mode=train epochs=50 data=data_custom.yaml model=yolo11m.pt imgsz=640
+yolo task=detect mode=predict model=yolov8n show=True conf=0.5 source=1.jpeg
+yolo task=detect mode=predict model=yolov8n show=True conf=0.5 source=2.jpeg
