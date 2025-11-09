@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, type Location } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -7,14 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Leaf } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { refreshProfile } = useAuth();
+
+  const redirectState = location.state as { from?: { pathname?: string } } | null;
+  const redirectPath = redirectState?.from?.pathname ?? "/dashboard";
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,17 +35,24 @@ const Auth = () => {
         });
         if (error) throw error;
         
+        await refreshProfile();
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
         });
-        navigate("/dashboard");
+        navigate(redirectPath, { replace: true });
       } else {
+        if (!fullName.trim()) {
+          throw new Error("Please provide your full name to set up your profile.");
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: fullName,
+            },
           },
         });
         if (error) throw error;
@@ -47,6 +61,7 @@ const Auth = () => {
           title: "Account created!",
           description: "Welcome to EcoSort. Please check your email to confirm your account.",
         });
+        setIsLogin(true);
       }
     } catch (error: any) {
       toast({
@@ -78,6 +93,20 @@ const Auth = () => {
         </div>
 
         <form onSubmit={handleAuth} className="space-y-4">
+          {!isLogin && (
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full name</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Alex Johnson"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
