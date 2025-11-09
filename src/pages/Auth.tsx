@@ -8,6 +8,7 @@ import { Leaf } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthApiError } from "@supabase/supabase-js";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -33,7 +34,15 @@ const Auth = () => {
           email,
           password,
         });
-        if (error) throw error;
+        if (error) {
+          if (error.message === "Email not confirmed") {
+            await supabase.auth.resend({ type: "signup", email });
+            throw new Error(
+              "Please confirm your email address. We've just re-sent the verification link to your inbox.",
+            );
+          }
+          throw error;
+        }
         
         await refreshProfile();
         toast({
@@ -55,7 +64,12 @@ const Auth = () => {
             },
           },
         });
-        if (error) throw error;
+        if (error) {
+          if (error instanceof AuthApiError && error.status === 400 && error.message.includes("User already registered")) {
+            throw new Error("An account with this email already exists. Try signing in instead.");
+          }
+          throw error;
+        }
         
         toast({
           title: "Account created!",

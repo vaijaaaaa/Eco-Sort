@@ -51,30 +51,37 @@ const DashboardLayout = () => {
     <div className="flex min-h-screen bg-background">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-sidebar p-6 transition-transform lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-sidebar px-4 py-4 transition-transform lg:static lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        <Link to="/" className="mb-10 flex items-center gap-2 text-lg font-semibold text-foreground">
+        <Link to="/" className="mb-6 flex items-center gap-2 text-lg font-semibold text-foreground">
           <span className="h-3 w-3 rounded-sm bg-primary" />
           EcoSort
         </Link>
 
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-background/60 p-3 text-sm">
-          <Avatar className="h-10 w-10">
+  <div className="flex w-full items-center gap-3 rounded-xl border border-border bg-background/60 p-3 text-sm shadow-sm mb-6">
+          <Avatar className="h-10 w-10 shrink-0">
             <AvatarImage src={profile?.avatar_url ?? undefined} alt={profile?.full_name ?? "Profile Avatar"} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
-          <div className="leading-tight">
-            <p className="font-semibold text-foreground">{profile?.full_name ?? user?.email ?? "EcoSort User"}</p>
-            <p className="text-xs text-muted-foreground">{profile?.role === "admin" ? "Administrator" : "Community Member"}</p>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate text-sm font-semibold text-foreground">
+              {profile?.full_name ?? user?.email ?? "EcoSort User"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {user?.email}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {profile?.role === "admin" ? "Administrator" : "Community Member"}
+            </p>
           </div>
         </div>
 
-        <nav className="mt-8 flex flex-col gap-1">{navigation.map(renderNavItem)}</nav>
+        <nav className="flex flex-col gap-1">{navigation.map(renderNavItem)}</nav>
       </aside>
 
-      <div className="flex flex-1 flex-col lg:ml-64">
+      <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/80 px-6 py-4 backdrop-blur">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen((prev) => !prev)}>
@@ -96,7 +103,7 @@ const DashboardLayout = () => {
           </div>
         </header>
 
-        <main className="flex-1 bg-muted/30 px-4 py-8 sm:px-6 lg:px-8">
+        <main className="flex-1 bg-muted/30 p-6">
           <div className="mx-auto w-full max-w-6xl">
             <Outlet />
           </div>
