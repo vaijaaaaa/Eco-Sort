@@ -11,10 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { listingSchema, type ListingFormValues } from "@/lib/validators/listing";
+import { listingSchema, type ListingFormValues, materialTypes } from "@/lib/validators/listing";
 import { createListing, fetchListingById, updateListing } from "@/services/listingService";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Upload, X, ImageIcon, Loader2 } from "lucide-react";
+import { Trash2, Upload, X, ImageIcon, Loader2, Leaf } from "lucide-react";
+import { getMaterialInfo, formatCarbonAmount } from "@/services/carbonService";
 
 const categories = [
   "Laptop",
@@ -52,10 +53,37 @@ const DashboardListingForm = () => {
       contactPhone: "",
       status: "available",
       imageUrls: [],
+      materialType: undefined,
+      weightKg: undefined,
     },
   });
   const imageUrls = form.watch("imageUrls") ?? [];
+  const materialType = form.watch("materialType");
+  const weightKg = form.watch("weightKg");
   const [uploadingImages, setUploadingImages] = useState<boolean>(false);
+  const [estimatedCarbon, setEstimatedCarbon] = useState<number | null>(null);
+
+  // Calculate estimated carbon footprint when material type or weight changes
+  useEffect(() => {
+    const calculateCarbon = async () => {
+      if (materialType && weightKg && weightKg > 0) {
+        try {
+          const { data, error } = await supabase.rpc("calculate_carbon_footprint", {
+            p_material_type: materialType,
+            p_weight_kg: weightKg,
+          });
+          if (!error && data) {
+            setEstimatedCarbon(data);
+          }
+        } catch (error) {
+          console.error("Error calculating carbon:", error);
+        }
+      } else {
+        setEstimatedCarbon(null);
+      }
+    };
+    calculateCarbon();
+  }, [materialType, weightKg]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -348,6 +376,73 @@ const DashboardListingForm = () => {
               <p className="text-xs text-destructive">{form.formState.errors.status.message}</p>
             )}
           </div>
+        </div>
+
+        {/* Carbon Footprint Section */}
+        <div className="space-y-4 rounded-lg border border-green-200 bg-green-50/50 p-4 dark:border-green-800 dark:bg-green-950/20">
+          <div className="flex items-center gap-2">
+            <Leaf className="h-5 w-5 text-green-600 dark:text-green-500" />
+            <h3 className="font-semibold text-green-900 dark:text-green-100">Carbon Footprint Tracking (Optional)</h3>
+          </div>
+          <p className="text-sm text-green-700 dark:text-green-300">
+            Help buyers understand the environmental impact of reusing this item instead of buying new.
+          </p>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="materialType">Material Type</Label>
+              <Select 
+                onValueChange={(value) => form.setValue("materialType", value as any)} 
+                value={form.watch("materialType")}
+              >
+                <SelectTrigger id="materialType">
+                  <SelectValue placeholder="Select material" />
+                </SelectTrigger>
+                <SelectContent>
+                  {materialTypes.map((material) => {
+                    const info = getMaterialInfo(material);
+                    return (
+                      <SelectItem key={material} value={material}>
+                        <span className="flex items-center gap-2">
+                          <span>{info.icon}</span>
+                          <span>{info.name}</span>
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.materialType && (
+                <p className="text-xs text-destructive">{form.formState.errors.materialType.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="weightKg">Weight (kg)</Label>
+              <Input
+                id="weightKg"
+                type="number"
+                step="0.001"
+                min="0"
+                placeholder="0.5"
+                {...form.register("weightKg", { valueAsNumber: true })}
+              />
+              {form.formState.errors.weightKg && (
+                <p className="text-xs text-destructive">{form.formState.errors.weightKg.message}</p>
+              )}
+            </div>
+          </div>
+
+          {estimatedCarbon !== null && estimatedCarbon > 0 && (
+            <div className="rounded-md bg-green-100 p-3 dark:bg-green-900/30">
+              <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                Estimated Carbon Saved: <span className="text-lg font-bold">{formatCarbonAmount(estimatedCarbon)}</span>
+              </p>
+              <p className="mt-1 text-xs text-green-700 dark:text-green-300">
+                By reusing this item instead of manufacturing a new one
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">

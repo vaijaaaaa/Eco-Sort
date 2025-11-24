@@ -17,6 +17,7 @@ const Navbar = () => {
       { label: "Home", to: "/" },
       { label: "AI Classifier", to: "/classifier" },
       { label: "Marketplace", to: "/marketplace" },
+      { label: "Carbon Impact", to: "/carbon" },
     ];
 
     if (user) {

@@ -22,6 +22,7 @@ import Navbar from "@/components/Navbar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { createBuyRequest, fetchListings, type ListingStatus } from "@/services/listingService";
+import { CarbonBadge, MaterialBadge } from "@/components/CarbonBadge";
 
 const categoryFilters = [
   "all",
@@ -206,6 +207,19 @@ const Marketplace = () => {
                       </div>
                       <Badge variant="secondary">{listing.category}</Badge>
                     </div>
+
+                    {listing.carbon_footprint_kg && listing.carbon_footprint_kg > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <CarbonBadge
+                          carbonFootprintKg={listing.carbon_footprint_kg}
+                          materialType={listing.material_type ?? undefined}
+                          size="sm"
+                        />
+                        {listing.material_type && (
+                          <MaterialBadge materialType={listing.material_type} size="sm" />
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
