@@ -1,0 +1,5 @@
+train: D:\Project\Eco-Sort\yolov6\train
+val: D:\Project\Eco-Sort\yolov6\val
+
+nc: 3
+names: ["banana","bottle","syringes"]
