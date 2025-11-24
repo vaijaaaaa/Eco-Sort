@@ -1,0 +1,25 @@
+# Ignore trained model weights
+
+best.pt
+last.pt
+# YOLO training output folders
+# runs/
+# yolov6/runs/
+# yolov8/runs/
+# yolov5/runs/
+yolov6n.pt
+# Ignore dataset cache
+*.cache
+*.zip
+*.tar
+*.rar
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+env/
+venv/
