@@ -37,6 +37,11 @@ A modern web application for buying and selling electronic waste (e-waste) respo
 - Image validation (max 5MB per image, up to 5 images)
 - Status management (Available, Sold, Reserved)
 
+### AI Waste Classifier
+- Live camera capture for detecting waste items
+- FastAPI service powered by YOLOv8 custom weights
+- Confidence scoring with disposal guidance
+
 ### Image Upload
 - Direct file upload from device
 - Secure storage via Supabase Storage
@@ -74,6 +79,7 @@ A modern web application for buying and selling electronic waste (e-waste) respo
 
 - Node.js 18.x or higher
 - npm or bun package manager
+- Python 3.9 or higher
 - Supabase account
 - Git
 
@@ -95,6 +101,7 @@ Create a `.env` file in the root directory:
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+VITE_CLASSIFIER_API_URL=http://127.0.0.1:8000
 ```
 
 4. Set up the database:
@@ -108,6 +115,38 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:8080`
+
+6. Start the waste classifier API (instructions below) to enable the AI classifier page.
+
+## Waste Classifier API (FastAPI)
+
+The YOLOv8-based waste classifier runs as a separate FastAPI service located in the `server/` directory.
+
+1. Create and activate a virtual environment (example using `python -m venv`):
+  ```bash
+  python -m venv .venv
+  .\.venv\Scripts\activate
+  # On macOS/Linux: source .venv/bin/activate
+  ```
+
+2. Install backend dependencies:
+  ```bash
+  pip install -r server/requirements.txt
+  ```
+
+3. (Optional) Configure environment variables:
+  - `MODEL_PATH` (default: `yolov8/runs/detect/train3/weights/best.pt`)
+  - `ALLOWED_ORIGINS` (comma-separated list, default: `*`)
+  - `MIN_CONFIDENCE` (float between 0 and 1, default: `0.25`)
+
+4. Start the API:
+  ```bash
+  uvicorn server.main:app --reload --host 0.0.0.0 --port 8000
+  ```
+
+  The service exposes `POST /detect` for image classification and `GET /health` for readiness checks.
+
+5. Keep the API running while developing so the frontend classifier page can submit images for analysis.
 
 ## Database Setup
 
@@ -154,6 +193,7 @@ ecosort-ai-market/
 │   ├── services/       # API service functions
 │   └── main.tsx        # Application entry point
 ├── supabase/           # Database migrations and config
+├── server/             # FastAPI waste classifier service
 ├── .env.example        # Environment variables template
 ├── vercel.json         # Vercel deployment config
 └── package.json        # Project dependencies
@@ -267,7 +307,7 @@ For support, email vaijuwalker111@gmail.com or open an issue in the repository.
 
 ## Roadmap
 
-- [ ] AI-powered item classification
+- [x] AI-powered item classification
 - [ ] Real-time chat between buyers and sellers
 - [ ] Payment integration
 - [ ] Rating and review system
