@@ -16,8 +16,12 @@ import {
 
 const DETECTION_INTERVAL_MS = 1500;
 
+// Updated waste type mapping for YOLOv6 model classes: banana, bottle, syringes
 const WASTE_TYPE_MAP: Record<string, WasteType> = {
+  banana: "biodegradable",
   bottle: "non-biodegradable",
+  syringes: "non-biodegradable",
+  // Legacy mappings for backwards compatibility
   carrybag: "non-biodegradable",
   "carry bag": "non-biodegradable",
   carry_bag: "non-biodegradable",
@@ -107,6 +111,7 @@ const Classifier = () => {
     }
 
     try {
+      console.log("Requesting camera access...");
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
@@ -116,9 +121,27 @@ const Classifier = () => {
         audio: false,
       });
 
+      console.log("Camera stream acquired:", mediaStream);
+      console.log("Video tracks:", mediaStream.getVideoTracks());
+      
       streamRef.current = mediaStream;
       setIsSessionActive(true);
       setIsDialogOpen(true);
+      
+      // Wait for dialog to be rendered, then attach stream
+      setTimeout(() => {
+        const video = videoRef.current;
+        if (video && streamRef.current) {
+          console.log("Attaching stream to video element");
+          video.srcObject = streamRef.current;
+          video.play()
+            .then(() => console.log("Video playing successfully"))
+            .catch((err) => console.error("Video play failed:", err));
+        } else {
+          console.error("Video element not found or stream lost");
+        }
+      }, 100);
+      
     } catch (error) {
       console.error("Camera access failed", error);
       toast({
@@ -294,6 +317,18 @@ const Classifier = () => {
   useEffect(() => {
     if (isDialogOpen) {
       drawOverlay();
+      
+      // Ensure video has stream when dialog opens
+      const video = videoRef.current;
+      const stream = streamRef.current;
+      
+      if (video && stream && !video.srcObject) {
+        console.log("Dialog opened - attaching stream to video");
+        video.srcObject = stream;
+        video.play()
+          .then(() => console.log("Video started playing"))
+          .catch((err) => console.error("Failed to play video:", err));
+      }
     }
   }, [isDialogOpen, drawOverlay]);
 
@@ -324,18 +359,6 @@ const Classifier = () => {
     return undefined;
   }, [isSessionActive, runDetection]);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    const stream = streamRef.current;
-    if (!isDialogOpen || !video || !stream) {
-      return;
-    }
-
-    video.srcObject = stream;
-    const playPromise = video.play();
-    void playPromise?.catch(() => undefined);
-  }, [isDialogOpen]);
-
   useEffect(() => () => {
     const stream = streamRef.current;
     if (stream) {
@@ -357,7 +380,7 @@ const Classifier = () => {
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">AI Waste Classifier</h1>
           <p className="text-lg text-muted-foreground">
-            Launch the live detector, keep the item in frame, and receive instant biodegradable insights.
+            Launch the live detector, keep the item in frame, and receive instant biodegradable insights using our trained YOLOv6 model.
           </p>
         </div>
 
@@ -366,7 +389,7 @@ const Classifier = () => {
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold">Live Classification Session</h2>
               <p className="text-sm text-muted-foreground">
-                We capture frames every few seconds, analyse them with the YOLOv8 model, and stream the results back to you.
+                We capture frames every few seconds, analyse them with the trained YOLOv6 model (detecting banana, bottle, syringes), and stream the results back to you.
               </p>
             </div>
 
@@ -553,7 +576,7 @@ const Classifier = () => {
           <DialogHeader>
             <DialogTitle>Live Waste Detection</DialogTitle>
             <DialogDescription>
-              Keep your item steady inside the frame. Bounding boxes refresh as the YOLO model identifies objects.
+              Keep your item steady inside the frame. Bounding boxes refresh as the YOLOv6 model identifies objects (banana, bottle, syringes).
             </DialogDescription>
           </DialogHeader>
 

@@ -1,5 +1,0 @@
-train: ./train
-val: ./val
-
-nc: 2
-name: ["bottle","carrybag"]

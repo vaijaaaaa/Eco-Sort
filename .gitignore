@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
 dist
 dist-ssr
@@ -22,4 +23,74 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
 .env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# YOLOv6 Model weights (LARGE FILES - should not be in Git)
+*.pt
+yolov6/yolo11m.pt
+yolov6/yolov6n.pt
+yolov6/runs/detect/train/weights/best.pt
+yolov6/runs/detect/train/weights/last.pt
+
+# YOLOv6 Training outputs
+yolov6/runs/
+
+# Dataset files (images can be large)
+yolov6/train/images/
+yolov6/val/images/
+
+# Cache and temporary files
+*.cache
+*.tmp
+*.temp
+.cache/
+
+# OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# IDE
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Package lock files (optional - choose one)
+# Uncomment if using npm
+# package-lock.json
+# Uncomment if using yarn
+# yarn.lock
+
+# Bun
+bun.lockb
+
+# Documentation generated files (optional)
+# Keep these commented if you want to commit documentation
+# YOLOV6_INTEGRATION.md
+# INTEGRATION_SUMMARY.md
+# QUICKSTART.md
+# ARCHITECTURE.md
+# VERIFICATION_CHECKLIST.md
