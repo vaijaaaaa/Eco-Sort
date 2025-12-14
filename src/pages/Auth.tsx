@@ -35,12 +35,6 @@ const Auth = () => {
           password,
         });
         if (error) {
-          if (error.message === "Email not confirmed") {
-            await supabase.auth.resend({ type: "signup", email });
-            throw new Error(
-              "Please confirm your email address. We've just re-sent the verification link to your inbox.",
-            );
-          }
           throw error;
         }
         
@@ -58,7 +52,6 @@ const Auth = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
             data: {
               full_name: fullName,
             },
@@ -71,11 +64,12 @@ const Auth = () => {
           throw error;
         }
         
+        await refreshProfile();
         toast({
           title: "Account created!",
-          description: "Welcome to EcoSort. Please check your email to confirm your account.",
+          description: "Welcome to EcoSort! You're now logged in.",
         });
-        setIsLogin(true);
+        navigate(redirectPath, { replace: true });
       }
     } catch (error: any) {
       toast({
