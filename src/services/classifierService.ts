@@ -1,3 +1,13 @@
+/**
+ * Classifier Service
+ * 
+ * Handles communication with the YOLOv6 detection backend.
+ * Sends images to the /detect endpoint and processes detection results.
+ * 
+ * The backend model detects: banana, bottle, and syringes
+ * Returns bounding boxes, labels, confidence scores, and waste type classification.
+ */
+
 const API_URL = import.meta.env.VITE_CLASSIFIER_API_URL ?? "http://127.0.0.1:8000";
 
 export type WasteType = "biodegradable" | "non-biodegradable";
@@ -59,6 +69,11 @@ const toDetection = (raw: RawDetection): Detection => ({
 });
 
 export const classifyImage = async (image: Blob): Promise<ClassifierResponse> => {
+  // Prepare image for upload to YOLOv6 backend
+  const formData = new FormData();
+  formData.append("file", image, "frame.jpg");
+
+  // Send POST request to /detect endpoint
   const formData = new FormData();
   formData.append("file", image, "frame.jpg");
 
@@ -77,6 +92,7 @@ export const classifyImage = async (image: Blob): Promise<ClassifierResponse> =>
     throw new Error("Classifier response did not succeed");
   }
 
+  // Transform backend response to frontend format
   const detections = (data.detections ?? []).map(toDetection);
   const topPrediction = data.top_prediction
     ? {

@@ -69,6 +69,9 @@ export type Database = {
           status: "available" | "pending" | "sold"
           contact_email: string | null
           contact_phone: string | null
+          material_type: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed" | null
+          weight_kg: number | null
+          carbon_footprint_kg: number | null
           created_at: string
           updated_at: string
         }
@@ -85,6 +88,9 @@ export type Database = {
           status?: "available" | "pending" | "sold"
           contact_email?: string | null
           contact_phone?: string | null
+          material_type?: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed" | null
+          weight_kg?: number | null
+          carbon_footprint_kg?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -101,6 +107,9 @@ export type Database = {
           status?: "available" | "pending" | "sold"
           contact_email?: string | null
           contact_phone?: string | null
+          material_type?: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed" | null
+          weight_kg?: number | null
+          carbon_footprint_kg?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -218,16 +227,116 @@ export type Database = {
           }
         ]
       }
+      carbon_footprints: {
+        Row: {
+          id: string
+          user_id: string
+          listing_id: string | null
+          material_type: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
+          weight_kg: number
+          carbon_saved_kg: number
+          action_type: "sell" | "buy" | "recycle"
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          listing_id?: string | null
+          material_type: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
+          weight_kg: number
+          carbon_saved_kg: number
+          action_type: "sell" | "buy" | "recycle"
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          listing_id?: string | null
+          material_type?: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
+          weight_kg?: number
+          carbon_saved_kg?: number
+          action_type?: "sell" | "buy" | "recycle"
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carbon_footprints_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carbon_footprints_listing_id_fkey"
+            columns: ["listing_id"]
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      material_carbon_coefficients: {
+        Row: {
+          material_type: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
+          production_kg_co2_per_kg: number
+          recycling_kg_co2_per_kg: number
+          landfill_kg_co2_per_kg: number
+          description: string | null
+          updated_at: string
+        }
+        Insert: {
+          material_type: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
+          production_kg_co2_per_kg: number
+          recycling_kg_co2_per_kg: number
+          landfill_kg_co2_per_kg: number
+          description?: string | null
+          updated_at?: string
+        }
+        Update: {
+          material_type?: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
+          production_kg_co2_per_kg?: number
+          recycling_kg_co2_per_kg?: number
+          landfill_kg_co2_per_kg?: number
+          description?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      user_carbon_stats: {
+        Row: {
+          user_id: string
+          total_actions: number
+          total_carbon_saved_kg: number
+          total_weight_kg: number
+          materials_recycled: number
+          material_types: ("plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed")[]
+          last_action_at: string
+        }
+      }
+      material_carbon_stats: {
+        Row: {
+          material_type: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
+          item_count: number
+          total_carbon_saved_kg: number
+          total_weight_kg: number
+          avg_carbon_per_item: number
+          last_action_at: string
+        }
+      }
     }
     Functions: {
-      [_ in never]: never
+      calculate_carbon_footprint: {
+        Args: {
+          p_material_type: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
+          p_weight_kg: number
+        }
+        Returns: number
+      }
     }
     Enums: {
       listing_status: "available" | "pending" | "sold"
       request_status: "pending" | "accepted" | "declined"
+      material_type: "plastic" | "glass" | "metal" | "paper" | "cardboard" | "electronics" | "textiles" | "wood" | "rubber" | "organic" | "mixed"
     }
     CompositeTypes: {
       [_ in never]: never

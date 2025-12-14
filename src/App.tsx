@@ -16,6 +16,7 @@ import DashboardListings from "@/pages/dashboard/DashboardListings";
 import DashboardListingForm from "@/pages/dashboard/DashboardListingForm";
 import DashboardBuying from "@/pages/dashboard/DashboardBuying";
 import DashboardProfile from "@/pages/dashboard/DashboardProfile";
+import CarbonDashboard from "@/pages/CarbonDashboard";
 
 const queryClient = new QueryClient();
 
@@ -25,11 +26,12 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/classifier" element={<Classifier />} />
             <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/carbon" element={<CarbonDashboard />} />
             <Route path="/auth" element={<Auth />} />
             <Route
               path="/dashboard"

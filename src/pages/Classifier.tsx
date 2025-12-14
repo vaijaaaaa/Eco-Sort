@@ -16,6 +16,12 @@ import {
 
 const DETECTION_INTERVAL_MS = 1500;
 
+// Updated waste type mapping for YOLOv6 model classes: banana, bottle, syringes
+const WASTE_TYPE_MAP: Record<string, WasteType> = {
+  banana: "biodegradable",
+  bottle: "non-biodegradable",
+  syringes: "non-biodegradable",
+  // Legacy mappings for backwards compatibility
 const WASTE_TYPE_MAP: Record<string, WasteType> = {
   bottle: "non-biodegradable",
   carrybag: "non-biodegradable",
@@ -107,6 +113,7 @@ const Classifier = () => {
     }
 
     try {
+      console.log("Requesting camera access...");
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
@@ -116,6 +123,27 @@ const Classifier = () => {
         audio: false,
       });
 
+      console.log("Camera stream acquired:", mediaStream);
+      console.log("Video tracks:", mediaStream.getVideoTracks());
+      
+      streamRef.current = mediaStream;
+      setIsSessionActive(true);
+      setIsDialogOpen(true);
+      
+      // Wait for dialog to be rendered, then attach stream
+      setTimeout(() => {
+        const video = videoRef.current;
+        if (video && streamRef.current) {
+          console.log("Attaching stream to video element");
+          video.srcObject = streamRef.current;
+          video.play()
+            .then(() => console.log("Video playing successfully"))
+            .catch((err) => console.error("Video play failed:", err));
+        } else {
+          console.error("Video element not found or stream lost");
+        }
+      }, 100);
+      
       streamRef.current = mediaStream;
       setIsSessionActive(true);
       setIsDialogOpen(true);
@@ -167,6 +195,148 @@ const Classifier = () => {
           }
         }, "image/jpeg", 0.9);
       });
+
+      const result = await classifyImage(frameBlob);
+      const detections = result.detections ?? [];
+      setCurrentDetections(detections);
+
+      if (result.topPrediction) {
+        const detectedAt = Date.now();
+        const { label, confidence, wasteType } = result.topPrediction;
+
+        setClassification({
+          label,
+          confidence,
+          wasteType,
+          detections,
+          detectedAt,
+        });
+
+        setHistory((prev) => {
+          const entry: HistoryEntry = {
+            id: `${detectedAt}-${label}`,
+            label,
+            wasteType,
+            confidence,
+            detectedAt,
+          };
+
+          const [latest] = prev;
+          if (
+            latest &&
+            latest.label === entry.label &&
+            Math.abs(latest.confidence - entry.confidence) < 1 &&
+            detectedAt - latest.detectedAt < 5000
+          ) {
+            return prev;
+          }
+
+          return [entry, ...prev].slice(0, 20);
+        });
+      } else {
+        setClassification(null);
+      }
+    } catch (error) {
+      console.error("Detection failed", error);
+      const now = Date.now();
+      if (now - lastErrorRef.current > 4000) {
+        toast({
+          title: "Detection Error",
+          description: error instanceof Error ? error.message : "Unable to analyse the current frame.",
+          variant: "destructive",
+        });
+        lastErrorRef.current = now;
+      }
+    } finally {
+      detectionInFlightRef.current = false;
+    }
+  }, [isSessionActive, toast]);
+
+  const drawOverlay = useCallback(() => {
+    const canvas = overlayCanvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return;
+    }
+
+    const container = canvas.parentElement;
+    if (!container) {
+      return;
+    }
+
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    context.clearRect(0, 0, rect.width, rect.height);
+
+    if (!isSessionActive) {
+      return;
+    }
+
+    const videoWidth = video.videoWidth || rect.width;
+    const videoHeight = video.videoHeight || rect.height;
+    const scaleX = rect.width / videoWidth;
+    const scaleY = rect.height / videoHeight;
+
+    context.font = "16px 'Inter', sans-serif";
+    context.textBaseline = "top";
+
+    currentDetections.forEach((detection) => {
+      const { x1, y1, x2, y2 } = detection.boundingBox;
+      const width = (x2 - x1) * scaleX;
+      const height = (y2 - y1) * scaleY;
+      const x = x1 * scaleX;
+      const y = y1 * scaleY;
+
+      const wasteType = getWasteType(detection.label);
+      const color = overlayColors[wasteType];
+
+      context.strokeStyle = color;
+      context.lineWidth = 2;
+      context.strokeRect(x, y, width, height);
+
+      const label = `${formatLabel(detection.label)} (${formatConfidence(detection.confidence)}%)`;
+      const textPadding = 4;
+      const textWidth = context.measureText(label).width + textPadding * 2;
+      const textHeight = 20;
+      const textY = y - textHeight - 2 < 0 ? y + 2 : y - textHeight - 2;
+
+      context.fillStyle = color;
+      context.fillRect(x, textY, textWidth, textHeight);
+
+      context.fillStyle = "#ffffff";
+      context.fillText(label, x + textPadding, textY + 2);
+    });
+  }, [currentDetections, isSessionActive]);
+
+  useEffect(() => {
+    drawOverlay();
+  }, [drawOverlay]);
+
+  useEffect(() => {
+    if (isDialogOpen) {
+      drawOverlay();
+      
+      // Ensure video has stream when dialog opens
+      const video = videoRef.current;
+      const stream = streamRef.current;
+      
+      if (video && stream && !video.srcObject) {
+        console.log("Dialog opened - attaching stream to video");
+        video.srcObject = stream;
+        video.play()
+          .then(() => console.log("Video started playing"))
+          .catch((err) => console.error("Failed to play video:", err));
+      }
+    }
+  }, [isDialogOpen, drawOverlay]);
+
 
       const result = await classifyImage(frameBlob);
       const detections = result.detections ?? [];
@@ -357,6 +527,7 @@ const Classifier = () => {
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">AI Waste Classifier</h1>
           <p className="text-lg text-muted-foreground">
+            Launch the live detector, keep the item in frame, and receive instant biodegradable insights using our trained YOLOv6 model.
             Launch the live detector, keep the item in frame, and receive instant biodegradable insights.
           </p>
         </div>
@@ -366,6 +537,7 @@ const Classifier = () => {
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold">Live Classification Session</h2>
               <p className="text-sm text-muted-foreground">
+                We capture frames every few seconds, analyse them with the trained YOLOv6 model (detecting banana, bottle, syringes), and stream the results back to you.
                 We capture frames every few seconds, analyse them with the YOLOv8 model, and stream the results back to you.
               </p>
             </div>
@@ -553,6 +725,7 @@ const Classifier = () => {
           <DialogHeader>
             <DialogTitle>Live Waste Detection</DialogTitle>
             <DialogDescription>
+              Keep your item steady inside the frame. Bounding boxes refresh as the YOLOv6 model identifies objects (banana, bottle, syringes).
               Keep your item steady inside the frame. Bounding boxes refresh as the YOLO model identifies objects.
             </DialogDescription>
           </DialogHeader>
