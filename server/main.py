@@ -18,6 +18,7 @@ Detection results include:
 - Confidence scores (0-1 range)
 - Waste type classification (biodegradable/non-biodegradable)
 """
+"""FastAPI service exposing YOLO-based waste classification."""
 from __future__ import annotations
 
 import io
@@ -34,6 +35,7 @@ from PIL import Image
 BASE_DIR = Path(__file__).resolve().parent
 # Updated to use the new trained YOLOv6 model
 DEFAULT_MODEL_PATH = BASE_DIR.parent / "yolov6" / "runs" / "detect" / "train" / "weights" / "best.pt"
+DEFAULT_MODEL_PATH = BASE_DIR.parent / "yolov8" / "runs" / "detect" / "train3" / "weights" / "best.pt"
 DEFAULT_WASTE_TYPE = "non-biodegradable"
 
 app = FastAPI(title="Waste Classifier API")
@@ -48,6 +50,8 @@ waste_type_map: Dict[str, Literal["biodegradable", "non-biodegradable"]] = {
     "bottle": "non-biodegradable",
     "syringes": "non-biodegradable",
     # Legacy mappings for backwards compatibility
+waste_type_map: Dict[str, Literal["biodegradable", "non-biodegradable"]] = {
+    "bottle": "non-biodegradable",
     "carrybag": "non-biodegradable",
     "carry_bag": "non-biodegradable",
 }

@@ -74,6 +74,9 @@ export const classifyImage = async (image: Blob): Promise<ClassifierResponse> =>
   formData.append("file", image, "frame.jpg");
 
   // Send POST request to /detect endpoint
+  const formData = new FormData();
+  formData.append("file", image, "frame.jpg");
+
   const response = await fetch(`${API_URL}/detect`, {
     method: "POST",
     body: formData,
